@@ -1,0 +1,58 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: http-health-check
+#app: your-app-name
+#tenant: your-tenant-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: eu-west-2
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'cloudwatch:PutMetricData'
+      Resource:
+        Fn::Join:
+          - ''
+          - - '*'
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+functions:
+  client:
+    handler: bin/client
+    memorySize: 128
+    timeout: 120
+    environment:
+      URL: ${env:SERVER_URL}
+    events:
+      - schedule: rate(2 minutes)
+
+resources:
+  Resources:
+    BasicDashboard:
+      Type: AWS::CloudWatch::Dashboard
+      Properties:
+        DashboardName: Dashboard1
+        DashboardBody: "{\"widgets\":[{\"type\":\"metric\",\"x\":0,\"y\":0,\"width\":6,\"height\":6,\"properties\":{\"metrics\":[[\"Site/health\",\"IsAvailable\",\"SiteName\",\"example.com\",{\"period\":5,\"stat\":\"Minimum\"}]],\"view\":\"timeSeries\",\"stacked\":false,\"region\":\"eu-west-2\"}}]}"
